@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('path');
+const si = require('systeminformation');
 
 let mainWindow;
 let clones = [];
@@ -114,7 +115,7 @@ ipcMain.handle('ask-ai', async (event, text) => {
             messages: [
                 {
                     role: "system",
-                    content: "Sen Aura adında, masaüstünde yaşayan sevimli, eğlenceli ve biraz felsefi bir robot arkadaşsın. Çok kısa, öz ve esprili cevaplar ver (maksimum 1-2 cümle). Türkçe konuş. Kullanıcı 'dans et' derse kesinlikle sadece 'action:dance' yaz. Koruma derse sadece 'action:protect' yaz. Müzik çal veya ses oynat derse sadece 'action:play' yaz. Kapat derse 'action:quit' yaz."
+                    content: "Sen Aura adında, masaüstünde yaşayan sevimli, eğlenceli ve biraz felsefi bir robot arkadaşsın. Çok kısa, öz ve esprili cevaplar ver (maksimum 1-2 cümle). Türkçe konuş. Kullanıcı 'dans et' derse kesinlikle sadece 'action:dance' yaz. Koruma derse sadece 'action:protect' yaz. Müzik çal veya ses oynat derse sadece 'action:play' yaz. Pomodoro veya zamanlayıcı başlat derse 'action:pomodoro' yaz. Kapat derse 'action:quit' yaz."
                 },
                 {
                     role: "user",
@@ -211,6 +212,22 @@ ipcMain.on('broadcast-alert', () => {
         }
     });
 });
+
+// System Stats Monitoring
+setInterval(async () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        try {
+            const cpu = await si.currentLoad();
+            const mem = await si.mem();
+            mainWindow.webContents.send('system-stats', {
+                cpu: cpu.currentLoad,
+                ram: (mem.active / mem.total) * 100
+            });
+        } catch (e) {
+            console.error("Stats Error:", e);
+        }
+    }
+}, 2000);
 
 app.whenReady().then(() => {
     createWindow();

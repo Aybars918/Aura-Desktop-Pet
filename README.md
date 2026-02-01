@@ -15,6 +15,12 @@ Aura, masaüstünüzde yaşayan, sizinle etkileşime giren, akıllı ve sevimli 
 - **Sistem Medya Kontrolü (Yeni!):** Bilgisayarınızda çalan herhangi bir videoyu veya müziği (YouTube, Spotify vb.) Aura üzerinden yönetin! 🎵
   - **Dinamik Panel:** Aura'nın üzerine gelindiğinde veya bir medya oynatıldığında gözlerinin üzerinde kontrol tuşları (⏮ ▶/⏸ ⏭) belirir.
   - **Akıllı Sabitleme:** Medya oynatılırken kontrol paneli Aura'nın üzerinde sabit kalarak hızlı erişim sağlar.
+- **İstatistik Takibi (Canlı):** Aura bilgisayarınızın nabzını tutar! 📉
+  - **Dinamik Glow:** CPU ve RAM kullanımı arttıkça Aura'nın kalbi (core-glow) daha hızlı atmaya başlar.
+  - **Yorgunluk Uyarısı:** Sistem yükü %90'ı geçerse Aura "kırmızı" alarm moduna girer ve sizi uyarır.
+- **Pomodoro Sayacı:** Çalışma verimliliğinizi artırın. ⏳
+  - **Odaklanma Modu:** "Zamanlayıcı başlat" dediğinizde Aura mavi bir ışığa bürünür ve 25 dakikalık geri sayımı başlatır.
+  - **Mola Bildirimi:** Süre bittiğinde size haber verir.
 - **Şık Tasarım:** Glassmorphism (cam tasarımı) efekti, neon parlamalar ve akıcı orbit halkaları.
 - **Her Zaman Üstte:** Aura her zaman pencerelerinizin üzerinde durur, böylece her an ona ulaşabilirsiniz.
 

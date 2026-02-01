@@ -23,6 +23,8 @@ const confirmCamBtn = document.getElementById('confirm-cam');
 const sirenSound = document.getElementById('siren-sound');
 const enableSoundCheckbox = document.getElementById('enable-sound');
 const customSoundInput = document.getElementById('custom-sound');
+const pomodoroTimer = document.getElementById('pomodoro-timer');
+const coreGlow = document.querySelector('.core-glow');
 const mediaControls = document.getElementById('media-controls');
 const playPauseBtn = document.getElementById('play-pause-btn');
 const prevBtn = document.getElementById('prev-btn');
@@ -80,6 +82,52 @@ container.addEventListener('mouseenter', () => {
 container.addEventListener('mouseleave', () => {
     if (!isClone && !playState) mediaControls.classList.remove('visible');
 });
+
+// System Stats Listener
+ipcRenderer.on('system-stats', (event, stats) => {
+    if (!coreGlow) return;
+
+    // Pulse faster and glow redder on high load
+    const load = Math.max(stats.cpu, stats.ram);
+    const pulseDuration = Math.max(0.5, 2 - (load / 50)); // Fast pulse on high load
+    coreGlow.style.animationDuration = `${pulseDuration}s`;
+
+    if (load > 90) {
+        container.classList.add('dizzy', 'protected');
+        if (Math.random() > 0.95) chatBubble.innerText = "Sistem çok ısındı! 🚨";
+    } else if (load < 90 && !isProtected) {
+        container.classList.remove('dizzy', 'protected');
+    }
+});
+
+// Pomodoro Logic
+let pomodoroInterval = null;
+let pomodoroTime = 25 * 60;
+
+function startPomodoro() {
+    if (pomodoroInterval) clearInterval(pomodoroInterval);
+
+    pomodoroTime = 25 * 60;
+    container.classList.add('focus-mode');
+    pomodoroTimer.classList.add('visible');
+    chatBubble.innerText = "Odaklanma zamanı! 25 dakika başlıyor. ✍️";
+    chatInterface.classList.remove('hidden');
+
+    pomodoroInterval = setInterval(() => {
+        pomodoroTime--;
+        const mins = Math.floor(pomodoroTime / 60);
+        const secs = pomodoroTime % 60;
+        pomodoroTimer.innerText = `${mins}:${secs.toString().padStart(2, '0')}`;
+
+        if (pomodoroTime <= 0) {
+            clearInterval(pomodoroInterval);
+            container.classList.remove('focus-mode');
+            pomodoroTimer.classList.remove('visible');
+            chatBubble.innerText = "Tebrikler! Mola vakti. ☕";
+            if (soundEnabled && sirenSound) sirenSound.play().catch(e => { });
+        }
+    }, 1000);
+}
 
 // Handle Custom Sound Selection
 if (customSoundInput) {
@@ -389,6 +437,11 @@ userInput.addEventListener('keydown', async (e) => {
 
         if (response.includes('action:play')) {
             ipcRenderer.send('system-media-control', 'play-pause');
+            return;
+        }
+
+        if (response.includes('action:pomodoro')) {
+            startPomodoro();
             return;
         }
 

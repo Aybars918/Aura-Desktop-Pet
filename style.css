@@ -122,6 +122,45 @@ body {
     width: 140px;
 }
 
+.pomodoro-timer {
+    position: absolute;
+    bottom: -35px;
+    /* Positioned below the mouth */
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 10px #0ff;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-family: 'Courier New', Courier, monospace;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+}
+
+.pomodoro-timer.visible {
+    opacity: 1;
+}
+
+/* Focus Mode State */
+.aura-container.focus-mode .aura-body {
+    border-color: #0088ff;
+    box-shadow: 0 0 40px #0088ff, inset 0 0 15px rgba(0, 136, 255, 0.5);
+}
+
+.aura-container.focus-mode .eye {
+    background: #0088ff;
+    box-shadow: 0 0 15px #0088ff;
+    height: 14px;
+}
+
+.aura-container.focus-mode .core-glow {
+    background: radial-gradient(circle, #0088ff 0%, transparent 70%);
+}
+
 .media-controls.visible {
     opacity: 1;
     pointer-events: auto;
