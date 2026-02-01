@@ -1,0 +1,19 @@
+{
+  "name": "aura-pet",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "electron": "^40.1.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "groq-sdk": "^0.37.0"
+  }
+}

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="aura-container">
+        <div class="aura-body">
+            <div class="face">
+                <div class="eye left"></div>
+                <div class="eye right"></div>
+                <div class="mouth"></div>
+            </div>
+            <div class="core-glow"></div>
+        </div>
+        <div class="aura-rings">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+        </div>
+
+
+
+        <!-- Chat Interface -->
+        <div class="chat-interface hidden">
+            <button class="close-chat">×</button>
+            <div class="chat-bubble" id="pet-response">Merhaba! Ben Aura.</div>
+            <div class="input-area">
+                <input type="text" id="user-input" placeholder="Bir şey söyle...">
+            </div>
+        </div>
+    </div>
+    <script src="renderer.js"></script>
+</body>
+
+</html>
