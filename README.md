@@ -9,6 +9,9 @@ Aura, masaüstünüzde yaşayan, sizinle etkileşime giren, akıllı ve sevimli 
 - **Etkileşimli Animasyonlar:** 
   - **Baş Dönmesi (Dizzy):** Aura'yı çok hızlı sallarsanız başı döner ve gözleri kararır! 😵
   - **Dans Etme:** Ona "dans et" derseniz sizin için özel bir dans gösterisi yapar. 💃
+- **Koruma Modu (Yeni!):** Aura'ya "koruma" dediğinizde kamera üzerinden hareket algılama yapar. yabancıları bilgisayardan uzak tutmak için alarm verir. 🚨👀
+  - **Özelleştirilebilir Alarm Sesi:** Kendi `.mp3` veya `.wav` dosyanızı yükleyerek alarm sesini kişiselleştirebilirsiniz!
+  - **Klon Ordusu:** Koruma anında ekranda beliren ek klonlarla tam güvenlik sağlar.
 - **Şık Tasarım:** Glassmorphism (cam tasarımı) efekti, neon parlamalar ve akıcı orbit halkaları.
 - **Her Zaman Üstte:** Aura her zaman pencerelerinizin üzerinde durur, böylece her an ona ulaşabilirsiniz.
 

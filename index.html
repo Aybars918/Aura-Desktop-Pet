@@ -29,10 +29,30 @@
         <div class="chat-interface hidden">
             <button class="close-chat">×</button>
             <div class="chat-bubble" id="pet-response">Merhaba! Ben Aura.</div>
+            <div id="camera-choice" style="display:none; width: 100%; margin-bottom: 10px;">
+                <select id="camera-select"
+                    style="width: 100%; padding: 5px; border-radius: 10px; background: rgba(0,0,0,0.5); color: white; border: 1px solid var(--border-color);"></select>
+                <div
+                    style="margin-top: 5px; font-size: 12px; display: flex; align-items: center; gap: 5px; color: white;">
+                    <input type="checkbox" id="enable-sound" checked> <span>Siren Sesi Çal</span>
+                </div>
+                <div style="margin-top: 5px; font-size: 11px; color: #aaa;">
+                    Özel Alarm Sesi (Opsiyonel):
+                    <input type="file" id="custom-sound" accept="audio/*"
+                        style="width: 100%; font-size: 10px; margin-top: 2px;">
+                </div>
+                <button id="confirm-cam"
+                    style="width: 100%; margin-top: 5px; border-radius: 10px; background: var(--primary-glow); color: black; border: none; cursor: pointer; padding: 5px; font-weight: bold;">Kamerayı
+                    Seç ve Başlat</button>
+            </div>
+            <audio id="siren-sound" src="https://www.soundjay.com/mechanical_c2026/sounds/sharpening-knife-1.mp3" preload="auto"></audio>
             <div class="input-area">
                 <input type="text" id="user-input" placeholder="Bir şey söyle...">
             </div>
         </div>
+        <!-- Protection Mode Utilities -->
+        <video id="security-cam" autoplay playsinline style="display:none;"></video>
+        <canvas id="motion-canvas" style="display:none;" width="64" height="48"></canvas>
     </div>
     <script src="renderer.js"></script>
 </body>

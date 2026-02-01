@@ -412,6 +412,54 @@ body {
     animation: shake 0.5s infinite;
 }
 
+/* Protection Mode Styles */
+.aura-container.protected .aura-body {
+    border-color: #ff3333;
+    box-shadow:
+        0 0 40px #ff0000,
+        inset 0 0 20px rgba(255, 0, 0, 0.5);
+    animation: alarm 1s ease-in-out infinite alternate;
+}
+
+.aura-container.protected .eye {
+    height: 14px;
+    width: 14px;
+    background: #ff0000;
+    box-shadow: 0 0 15px #ff0000;
+    border-radius: 2px;
+    /* Rectangular/Angry eyes */
+}
+
+.aura-container.protected .mouth {
+    border-bottom: 3px solid #ff0000;
+    width: 30px;
+    height: 5px;
+    border-radius: 0;
+    margin-top: 40px;
+}
+
+.aura-container.protected .core-glow {
+    background: radial-gradient(circle, #ff0000 0%, transparent 70%);
+}
+
+.aura-container.protected .ring-1 {
+    border-color: rgba(255, 0, 0, 0.4);
+    animation-duration: 2s;
+    /* Faster spin when alert */
+}
+
+@keyframes alarm {
+    0% {
+        box-shadow: 0 0 20px #ff0000;
+        transform: scale(1);
+    }
+
+    100% {
+        box-shadow: 0 0 60px #ff0000, 0 0 20px #ffffff;
+        transform: scale(1.05);
+    }
+}
+
 /* Toy Ball */
 
 

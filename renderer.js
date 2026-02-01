@@ -9,6 +9,58 @@ let lastScreenX, lastScreenY;
 let totalDragDistance = 0;
 const DIZZY_THRESHOLD = 3000; // Pixels of movement to trigger dizziness
 
+// DOM Elements
+const container = document.querySelector('.aura-container');
+const chatInterface = document.querySelector('.chat-interface');
+const chatBubble = document.getElementById('pet-response');
+const userInput = document.getElementById('user-input');
+const closeChatBtn = document.querySelector('.close-chat');
+const securityCam = document.getElementById('security-cam');
+const motionCanvas = document.getElementById('motion-canvas');
+const cameraChoice = document.getElementById('camera-choice');
+const cameraSelect = document.getElementById('camera-select');
+const confirmCamBtn = document.getElementById('confirm-cam');
+const sirenSound = document.getElementById('siren-sound');
+const enableSoundCheckbox = document.getElementById('enable-sound');
+const customSoundInput = document.getElementById('custom-sound');
+
+let soundEnabled = true;
+if (enableSoundCheckbox) {
+    enableSoundCheckbox.addEventListener('change', (e) => {
+        soundEnabled = e.target.checked;
+    });
+}
+
+// Handle Custom Sound Selection
+if (customSoundInput) {
+    customSoundInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file && sirenSound) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                sirenSound.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+// Check if this window is a clone
+const urlParams = new URLSearchParams(window.location.search);
+const isClone = urlParams.get('mode') === 'clone';
+
+if (isClone) {
+    // Clones are always in 'protected' visual state
+    if (container) container.classList.add('protected');
+    // Hide chat for clones
+    if (chatInterface) chatInterface.style.display = 'none';
+
+    // Listen for alert trigger from main window
+    ipcRenderer.on('alert-trigger', () => {
+        triggerAlert(true); // true means don't broadcast back
+    });
+}
+
 window.addEventListener('mousedown', (e) => {
     // Prevent dragging if clicking the close button or inputs
     if (e.target.closest('.close-chat') || e.target.closest('input')) return;
@@ -88,11 +140,13 @@ window.addEventListener('mousemove', event => {
     }
 });
 
-const container = document.querySelector('.aura-container');
-const chatInterface = document.querySelector('.chat-interface');
-const chatBubble = document.getElementById('pet-response');
-const userInput = document.getElementById('user-input');
-const closeChatBtn = document.querySelector('.close-chat');
+const motionCtx = motionCanvas.getContext('2d', { willReadFrequently: true });
+
+// Protection Mode State
+let isProtected = false;
+let videoStream = null;
+let lastFrame = null;
+let motionInterval = null;
 
 async function getAIResponse(text) {
     try {
@@ -127,6 +181,133 @@ function performDance() {
     }, 1000);
 }
 
+async function toggleProtection() {
+    if (isProtected) {
+        stopProtection();
+    } else {
+        // Show camera selection UI
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+
+            if (videoDevices.length === 0) {
+                chatBubble.innerText = "Kamera bulunamadı!";
+                return;
+            }
+
+            cameraSelect.innerHTML = '';
+            videoDevices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.deviceId;
+                option.text = device.label || `Kamera ${cameraSelect.length + 1}`;
+                cameraSelect.appendChild(option);
+            });
+
+            cameraChoice.style.display = 'block';
+            userInput.parentElement.style.display = 'none'; // Hide input area while choosing
+            chatBubble.innerText = "Hangi kamerayı kullanayım?";
+        } catch (err) {
+            console.error("Cihaz listeleme hatası:", err);
+            chatBubble.innerText = "Kamera listesi alınamadı.";
+        }
+    }
+}
+
+confirmCamBtn.addEventListener('click', async () => {
+    const deviceId = cameraSelect.value;
+    cameraChoice.style.display = 'none';
+    userInput.parentElement.style.display = 'block';
+    await startProtection(deviceId);
+});
+
+async function startProtection(deviceId) {
+    try {
+        const constraints = {
+            video: { deviceId: deviceId ? { exact: deviceId } : undefined }
+        };
+        videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+        securityCam.srcObject = videoStream;
+        isProtected = true;
+        container.classList.add('protected');
+        chatBubble.innerText = "KORUMA MODU AKTİF! 🚨 Klonlar savunmaya geçti.";
+
+        ipcRenderer.send('spawn-clones');
+        motionInterval = setInterval(detectMotion, 500);
+    } catch (err) {
+        console.error("Kamera erişimi hatası:", err);
+        chatBubble.innerText = "Kamera erişimi sağlanamadı!";
+    }
+}
+
+function stopProtection() {
+    isProtected = false;
+    container.classList.remove('protected');
+    chatBubble.innerText = "Koruma modu devre dışı. Klonlar geri çekildi.";
+
+    ipcRenderer.send('remove-clones');
+
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+    }
+    clearInterval(motionInterval);
+    lastFrame = null;
+}
+
+function detectMotion() {
+    if (!isProtected) return;
+
+    motionCtx.drawImage(securityCam, 0, 0, motionCanvas.width, motionCanvas.height);
+    const currentFrame = motionCtx.getImageData(0, 0, motionCanvas.width, motionCanvas.height);
+
+    if (lastFrame) {
+        let diff = 0;
+        for (let i = 0; i < currentFrame.data.length; i += 4) {
+            // Check R, G, B difference
+            diff += Math.abs(currentFrame.data[i] - lastFrame.data[i]);
+            diff += Math.abs(currentFrame.data[i + 1] - lastFrame.data[i + 1]);
+            diff += Math.abs(currentFrame.data[i + 2] - lastFrame.data[i + 2]);
+        }
+
+        const sensitivity = 50000; // Adjust based on testing
+        if (diff > sensitivity) {
+            triggerAlert();
+        }
+    }
+    lastFrame = currentFrame;
+}
+
+const alertMessages = [
+    "SİSTEMDEN UZAKLAŞ! 🚨",
+    "SENİ GÖRÜYORUM! 👀",
+    "YETKİSİZ ERİŞİM! 🤖",
+    "GÜVENLİK İHLALİ ALGILANDI! 🛑",
+    "LÜTFEN GERİ ÇEKİLİN! ⚠️"
+];
+
+function triggerAlert(isFromBroadcast = false) {
+    if (!container) return;
+    container.classList.add('dizzy'); // Shake effect
+
+    // Only main window broadcasts and plays sound
+    if (!isClone && !isFromBroadcast) {
+        ipcRenderer.send('broadcast-alert');
+        const msg = alertMessages[Math.floor(Math.random() * alertMessages.length)];
+        chatBubble.innerText = msg;
+        chatInterface.classList.remove('hidden');
+
+        if (soundEnabled && sirenSound) {
+            // High-pitched siren sound logic
+            sirenSound.currentTime = 0;
+            sirenSound.volume = 1.0;
+            sirenSound.play().catch(e => console.error("Ses çalma hatası:", e));
+        }
+    }
+
+    setTimeout(() => {
+        if (isProtected || isClone) container.classList.remove('dizzy');
+    }, 1000);
+}
+
 // Handle Chat Input
 userInput.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
@@ -138,7 +319,11 @@ userInput.addEventListener('keydown', async (e) => {
 
         const response = await getAIResponse(text);
 
-        // Handle Special Actions from Chat
+        if (response.includes('action:protect')) {
+            toggleProtection();
+            return;
+        }
+
         if (response.includes('action:dance')) {
             chatBubble.innerText = "Hadi dans edelim!";
             performDance();

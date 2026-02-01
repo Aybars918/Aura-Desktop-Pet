@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('path');
 
 let mainWindow;
+let clones = [];
 
 function createWindow() {
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
@@ -113,7 +114,7 @@ ipcMain.handle('ask-ai', async (event, text) => {
             messages: [
                 {
                     role: "system",
-                    content: "Sen Aura adında, masaüstünde yaşayan sevimli, eğlenceli ve biraz felsefi bir robot arkadaşsın. Çok kısa, öz ve esprili cevaplar ver (maksimum 1-2 cümle). Türkçe konuş. Kullanıcı 'dans et' derse kesinlikle sadece 'action:dance' yaz. Kapat derse 'action:quit' yaz."
+                    content: "Sen Aura adında, masaüstünde yaşayan sevimli, eğlenceli ve biraz felsefi bir robot arkadaşsın. Çok kısa, öz ve esprili cevaplar ver (maksimum 1-2 cümle). Türkçe konuş. Kullanıcı 'dans et' derse kesinlikle sadece 'action:dance' yaz. Koruma derse sadece 'action:protect' yaz. Kapat derse 'action:quit' yaz."
                 },
                 {
                     role: "user",
@@ -127,6 +128,57 @@ ipcMain.handle('ask-ai', async (event, text) => {
         console.error("Main Process AI Error:", error);
         return `Hata: ${error.message}`;
     }
+});
+
+ipcMain.on('spawn-clones', () => {
+    // Clear any existing clones first
+    clones.forEach(c => { if (!c.isDestroyed()) c.destroy(); });
+    clones = [];
+
+    const display = screen.getPrimaryDisplay();
+    const { width, height } = display.workAreaSize;
+
+    // Define 3 clone positions
+    const positions = [
+        { x: 50, y: 50 },
+        { x: width - 300, y: 50 },
+        { x: 50, y: height - 350 }
+    ];
+
+    positions.forEach(pos => {
+        let clone = new BrowserWindow({
+            width: 250,
+            height: 300,
+            x: pos.x,
+            y: pos.y,
+            frame: false,
+            transparent: true,
+            alwaysOnTop: true,
+            resizable: false,
+            skipTaskbar: true,
+            webPreferences: {
+                nodeIntegration: true,
+                contextIsolation: false,
+            }
+        });
+
+        clone.setIgnoreMouseEvents(true);
+        clone.loadFile('index.html', { query: { mode: 'clone' } });
+        clones.push(clone);
+    });
+});
+
+ipcMain.on('remove-clones', () => {
+    clones.forEach(c => { if (!c.isDestroyed()) c.destroy(); });
+    clones = [];
+});
+
+ipcMain.on('broadcast-alert', () => {
+    clones.forEach(c => {
+        if (!c.isDestroyed()) {
+            c.webContents.send('alert-trigger');
+        }
+    });
 });
 
 app.whenReady().then(() => {
