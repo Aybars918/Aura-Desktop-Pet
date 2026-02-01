@@ -254,6 +254,8 @@ function performJump() {
     }, 200)
 }
 
+let isIgnoringMouse = false;
+
 // Click-through logic with state tracking to prevent IPC flooding
 window.addEventListener('mousemove', event => {
     // Only capture elements that have pointer-events: auto (which we set in CSS)
@@ -263,7 +265,10 @@ window.addEventListener('mousemove', event => {
     // Check if we are hovering over an interactive element
     const isInteractive = event.target.closest('.aura-container') ||
         event.target.closest('.chat-interface') ||
-        event.target.closest('.close-chat');
+        event.target.closest('.close-chat') ||
+        event.target.closest('.camera-choice') ||
+        event.target.closest('.media-controls') ||
+        event.target.closest('.pomodoro-timer');
 
     if (isInteractive) {
         if (isIgnoringMouse) {
@@ -457,15 +462,42 @@ async function processMessage(text) {
 
     const response = await getAIResponse(text);
 
-    if (response.includes('action:protect')) {
-        chatBubble.innerText = "Koruma modu devreye giriyor! 🛡️";
-        speak("Koruma modu aktif ediliyor.");
+    // Extract all actions using regex
+    const allActions = response.match(/action:\S+/g) || [];
+
+    // Check specific internal actions first
+    if (allActions.includes('action:protect_on')) {
+        if (!isProtected) {
+            chatBubble.innerText = "Koruma modu devreye giriyor! 🛡️";
+            speak("Koruma modu aktif ediliyor.");
+            toggleProtection();
+        } else {
+            chatBubble.innerText = "Koruma modu zaten açık.";
+        }
+        setTimeout(() => { chatInterface.classList.add('hidden'); }, 3000);
+        return;
+    }
+
+    if (allActions.includes('action:protect_off')) {
+        if (isProtected) {
+            chatBubble.innerText = "Koruma modu kapatılıyor. 🔓";
+            speak("Tamam, korumayı devre dışı bırakıyorum.");
+            toggleProtection();
+        } else {
+            chatBubble.innerText = "Koruma modu zaten kapalı.";
+        }
+        setTimeout(() => { chatInterface.classList.add('hidden'); }, 3000);
+        return;
+    }
+
+    if (allActions.some(a => a.startsWith('action:protect'))) { // Fallback for old/generic protect
+        chatBubble.innerText = "Koruma modu değiştiriliyor... 🛡️";
         toggleProtection();
         setTimeout(() => { chatInterface.classList.add('hidden'); }, 3000);
         return;
     }
 
-    if (response.includes('action:dance')) {
+    if (allActions.includes('action:dance')) {
         speak("Hadi biraz dans edelim!");
         chatBubble.innerText = "Hadi dans edelim!";
         performDance();
@@ -473,31 +505,29 @@ async function processMessage(text) {
         return;
     }
 
-    if (response.includes('action:quit')) {
+    if (allActions.includes('action:quit')) {
         speak("Görüşürüz, kendine iyi bak!");
-        container.classList.add('closing'); // Gözlerini kapatsın
-        setTimeout(() => {
-            try { window.close(); } catch (e) { }
-        }, 2000);
+        container.classList.add('closing');
+        setTimeout(() => { window.close(); }, 2000);
         return;
     }
 
-    if (response.includes('action:play')) {
+    if (allActions.includes('action:play')) {
         chatBubble.innerText = "Medya kontrol ediliyor... 🎵";
         ipcRenderer.send('system-media-control', 'play-pause');
         setTimeout(() => { chatInterface.classList.add('hidden'); }, 3000);
         return;
     }
 
-    if (response.includes('action:pomodoro')) {
+    if (allActions.includes('action:pomodoro')) {
         chatBubble.innerText = "Odaklanma modu başlıyor! ⏳";
-        speak("Odaklanma zamanı başlıyor, 25 dakika sonra görüşürüz.");
+        speak("Odaklanma zamanı başlıyor.");
         startPomodoro();
         setTimeout(() => { chatInterface.classList.add('hidden'); }, 3000);
         return;
     }
 
-    if (response.includes('action:speech_on')) {
+    if (allActions.includes('action:speech_on')) {
         isSpeechEnabled = true;
         chatBubble.innerText = "Sesli konuşma açıldı! 🎙️";
         speak("Sesli konuşma açıldı.");
@@ -505,7 +535,7 @@ async function processMessage(text) {
         return;
     }
 
-    if (response.includes('action:speech_off')) {
+    if (allActions.includes('action:speech_off')) {
         speak("Sesli konuşma kapatılıyor.");
         isSpeechEnabled = false;
         chatBubble.innerText = "Sesli konuşma kapatıldı. 🔇";
@@ -514,54 +544,91 @@ async function processMessage(text) {
     }
 
     if (response.includes('action:launch:')) {
-        // En sondaki komutu güvenli bir şekilde al
         const parts = response.split('action:launch:');
-        const cmd = parts[parts.length - 1].trim();
+        let cmd = parts[parts.length - 1].split(' ')[0].trim(); // Get first word after launch, or rest of string if no spaces
+        // Actually, some commands might have spaces (like app names). 
+        // But since we instructed AI to put it at the very end, we can take the rest.
+        cmd = parts[parts.length - 1].trim();
+
+        // Remove trailing punctuation
+        cmd = cmd.replace(/[.!]$/, '');
 
         chatBubble.innerText = "İstediğin komutu çalıştırıyorum... 🚀";
         speak("Hemen hallediyorum.");
         ipcRenderer.send('launch-app', cmd);
 
-        // Aksiyondan sonra sohbeti kapat
-        setTimeout(() => {
-            chatInterface.classList.add('hidden');
-        }, 3000);
+        setTimeout(() => { chatInterface.classList.add('hidden'); }, 3000);
         return;
     }
 
-    if (response.includes('action:mood_status')) {
+    if (allActions.includes('action:mood_status')) {
         const status = `Ruh halim: %${Math.floor(mood)}, Enerjim: %${Math.floor(stamina)}.`;
         chatBubble.innerText = status;
         speak(status);
         return;
     }
 
-    // Ekranda gösterilecek yanıtı temizle (action: kısmını gizle)
-    const displayResponse = response.replace(/action:\S+/g, '').trim();
+    // Default: Clean up response for display and speech
+    // Use \S+ to catch the entire action including URL characters
+    const displayResponse = response.replace(/action:\S+/g, '').replace(/  +/g, ' ').trim();
     if (displayResponse) {
         chatBubble.innerText = displayResponse;
-    } else {
-        // Eğer yanıt sadece aksiyondan ibaretse bubble'ı gizleme veya varsayılan mesaj yaz
-        // (Zaten aksiyonlar kendi mesajlarını set ediyor yukarıda)
+        speak(displayResponse);
     }
-    speak(response);
 }
 
-function speak(text) {
+async function speak(text) {
     if (!isSpeechEnabled) return;
-    // Önceki konuşmayı durdur
-    window.speechSynthesis.cancel();
 
     // Sesi temizle (action: komutlarını okumasın)
-    const cleanText = text.replace(/action:\w+/g, '').trim();
+    const cleanText = text.replace(/action:\S+/g, '').trim();
     if (!cleanText) return;
 
+    const ELEVENLABS_API_KEY = process.env.ELEVEN_LABS_API_KEY || process.env.ELEVENLABS_API_KEY;
+    const VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'; // Örnek sevimli bir ses (Bella veya robotik bir ses seçilebilir)
+
+    if (ELEVENLABS_API_KEY) {
+        try {
+            // Önceki sesleri durdurmak için mevcut sesleri sustur (Audio objesi yönetimi gerekebilir)
+            if (window.currentAudio) window.currentAudio.pause();
+
+            const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'xi-api-key': ELEVENLABS_API_KEY
+                },
+                body: JSON.stringify({
+                    text: cleanText,
+                    model_id: 'eleven_multilingual_v2',
+                    voice_settings: {
+                        stability: 0.5,
+                        similarity_boost: 0.75
+                    }
+                })
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                window.currentAudio = new Audio(url);
+                window.currentAudio.play();
+                return;
+            } else {
+                console.warn("ElevenLabs Hatası, tarayıcı sesine dönülüyor.");
+            }
+        } catch (error) {
+            console.error("ElevenLabs bağlantı hatası:", error);
+        }
+    }
+
+    // FALLBACK: Web Speech API
+    window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'tr-TR';
     utterance.rate = 1.1;
-    utterance.pitch = 1.2; // Biraz daha sevimli/robotik bir ses için
+    utterance.pitch = 1.2;
 
-    // Türkçe ses bulmaya çalış
     const voices = window.speechSynthesis.getVoices();
     const trVoice = voices.find(v => v.lang.includes('tr'));
     if (trVoice) utterance.voice = trVoice;
@@ -630,3 +697,4 @@ ipcRenderer.on('app-launch-failed', (event, appName) => {
 chatInterface.addEventListener('click', (e) => {
     e.stopPropagation();
 });
+

@@ -125,7 +125,6 @@ async function searchInDirectory(dir, query, depth = 0) {
     return matches;
 }
 
-// Check if a command exists in system PATH (to avoid Windows error popup)
 function commandExistsInPath(cmd) {
     return new Promise((resolve) => {
         exec(`where "${cmd}"`, (err) => {
@@ -138,33 +137,27 @@ ipcMain.on('launch-app', async (event, appCommand) => {
     if (!appCommand || !appCommand.trim()) return;
 
     let cmd = appCommand.trim();
+    console.log("Launch requested:", cmd);
 
-    // 1. URL Check (Handles 'start https://...' or just 'https://...')
     if (cmd.startsWith('http') || cmd.startsWith('www') || cmd.startsWith('start http')) {
         let url = cmd.replace('start ', '').trim();
         url = url.startsWith('www') ? 'https://' + url : url;
-        console.log(`URL açılıyor: ${url}`);
         shell.openExternal(url);
         return;
     }
 
-    // 2. Absolute Path Check
     if (fs.existsSync(cmd) && cmd.includes('\\')) {
         exec(`"${cmd}"`);
         return;
     }
 
-    // 3. System PATH Check (To avoid the "Windows cannot find..." popup)
     const exists = await commandExistsInPath(cmd);
     if (exists) {
         exec(`start "" "${cmd}"`);
         return;
     }
 
-    // 4. Deep Search (If not in path and not a direct file)
-    console.log(`Komut sistemde bulunamadı, derin arama yapılıyor: ${cmd}`);
     const matches = await findAppExecutables(cmd);
-
     if (matches.length === 1) {
         exec(`"${matches[0]}"`);
     } else if (matches.length > 1) {
@@ -182,11 +175,28 @@ ipcMain.handle('ask-ai', async (event, text) => {
             messages: [
                 {
                     role: "system",
-                    content: `Sen Aura'sın, sevimli bir masaüstü robotusun. 
-                    - SADECE kullanıcı senden bir şey yapmanı isterse şu komutları kullan:
-                      'action:dance', 'action:protect', 'action:play', 'action:pomodoro', 'action:launch:KOMUT'
-                    - HAVA DURUMU/WEB ARAMASI: Eğer kullanıcı hava durumunu veya bir şeyi aramanı isterse 'action:launch:https://www.google.com/search?q=TERİM' komutunu kullan.
-                    - KURAL: Aksiyonu sadece eylem istendiğinde, mesajın EN SONUNA ekle.`
+                    content: `Sen Aura'sın, sevimli bir masaüstü robotusun. Yanıtların sempatik, kısa ve Türkçe olsun.
+                    
+                    **İÇ KOMUTLARIN (Sadece bunları kullan):**
+                    - 'action:dance': Dans etmeni isterse.
+                    - 'action:protect_on': Korumayı açmanı isterse.
+                    - 'action:protect_off': Korumayı kapatmanı isterse.
+                    - 'action:play': Medya oynat/duraklat.
+                    - 'action:pomodoro': Odaklanma zamanlayıcısı.
+                    - 'action:speech_on': Sesini açmanı isterse.
+                    - 'action:speech_off': Sesini kapatmanı isterse.
+                    - 'action:mood_status': Ruh halini sorarsa.
+                    - 'action:quit': Vedalaşıp kapanmanı isterse.
+
+                    **DIŞ KOMUTLAR (action:launch:):**
+                    - Bilgisayarda bir uygulama açmanı isterse: 'action:launch:notepad', 'action:launch:calc' vb.
+                    - Web'de arama yapmanı veya site açmanı isterse: 'action:launch:https://google.com/search?q=TERİM'
+                    - Hava durumunu sorarsa: 'action:launch:https://www.google.com/search?q=hava+durumu'
+
+                    **KRİTİK KURALLAR:**
+                    1. Eğer istek yukarıdaki İÇ KOMUTLAR ile yapılabiliyorsa ASLA 'action:launch' kullanma.
+                    2. Aksiyon komutunu mesajın EN SONUNA ekle. Komuttan sonra nokta dahil hiçbir şey yazma.
+                    3. Her zaman bir aksiyon kullanmak zorunda değilsin, sadece eylem istendiğinde kullan.`
                 },
                 { role: "user", content: text }
             ],
@@ -194,7 +204,6 @@ ipcMain.handle('ask-ai', async (event, text) => {
         });
         return completion.choices[0]?.message?.content || "Anlayamadım.";
     } catch (error) {
-        console.error("Main Process AI Error:", error);
         return `Hata: ${error.message}`;
     }
 });
@@ -202,8 +211,7 @@ ipcMain.handle('ask-ai', async (event, text) => {
 ipcMain.on('spawn-clones', () => {
     clones.forEach(c => { if (!c.isDestroyed()) c.destroy(); });
     clones = [];
-    const display = screen.getPrimaryDisplay();
-    const { width, height } = display.workAreaSize;
+    const { width, height } = screen.getPrimaryDisplay().workAreaSize;
     const positions = [{ x: 50, y: 50 }, { x: width - 300, y: 50 }, { x: 50, y: height - 350 }];
 
     positions.forEach(pos => {
