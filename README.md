@@ -12,6 +12,7 @@ Aura, masaüstünüzde yaşayan, sizinle etkileşime giren, akıllı ve sevimli 
 - **Koruma Modu (Yeni!):** Aura'ya "koruma" dediğinizde kamera üzerinden hareket algılama yapar. yabancıları bilgisayardan uzak tutmak için alarm verir. 🚨👀
   - **Özelleştirilebilir Alarm Sesi:** Kendi `.mp3` veya `.wav` dosyanızı yükleyerek alarm sesini kişiselleştirebilirsiniz!
   - **Klon Ordusu:** Koruma anında ekranda beliren ek klonlarla tam güvenlik sağlar.
+- **Veda Göz Kırpması:** Aura kapanırken size tatlı bir şekilde göz kırparak veda eder. 😉👋
 - **Sistem Medya Kontrolü (Yeni!):** Bilgisayarınızda çalan herhangi bir videoyu veya müziği (YouTube, Spotify vb.) Aura üzerinden yönetin! 🎵
   - **Dinamik Panel:** Aura'nın üzerine gelindiğinde veya bir medya oynatıldığında gözlerinin üzerinde kontrol tuşları (⏮ ▶/⏸ ⏭) belirir.
   - **Akıllı Sabitleme:** Medya oynatılırken kontrol paneli Aura'nın üzerinde sabit kalarak hızlı erişim sağlar.
@@ -56,7 +57,14 @@ npm start
 
 ## 🖱️ Kullanım Kılavuzu
 
-- **Sürükle & Bırak:** Aura'yı vücudundan yakalayıp istediğiniz yere taşıyabilirsiniz.
+- **Masaüstü Asistanı (Gelişmiş):** Aura'dan herhangi bir uygulamayı (`Steam`, `Discord`, `Notepad` vb.) açmasını isteyebilirsiniz. 🛠️
+  - **Derin Arama:** Eğer uygulama standart yerlerde yoksa Aura tüm bilgisayarınızı tarayıp bulur.
+  - **Akıllı Seçim:** Aynı isimde birden fazla uygulama varsa size seçenek sunar.
+  - **Web & Bilgi:** "Hava durumu nasıl?" veya "X nedir?" gibi sorularınızda varsayılan tarayıcınızda otomatik arama yapar.
+- **Ruh Hali ve Enerji Sistemi:** Aura artık "yaşıyor"! 📊
+  - **Dinamik Mod:** İlgisiz kaldığında üzülür (griye döner), çok yorulursa uykusu gelir (baş dönmesi animasyonu).
+  - **Etkileşim:** Onu sevmek için üzerine tıklayın! Tıkladığınızda neşelenir ve zıplar.
+  - **Durum Sorgulama:** "Nasıl hissediyorsun?" diye sorarak puanlarını görebilirsiniz.
 - **Sohbet:** Aura'ya çift tıklayarak sohbet ekranını açabilirsiniz.
 - **Sesli Komut Kurulumu (Opsiyonel):** 🎙️
   - Ses model dosyası çok büyük olduğu için ana projeye dahil edilmemiştir.

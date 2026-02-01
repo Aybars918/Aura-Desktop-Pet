@@ -31,6 +31,11 @@ const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
 
 let isSpeechEnabled = true;
+let mood = 100; // 0-100
+let stamina = 100; // 0-100
+const MAX_VAL = 100;
+const MOOD_DECAY = 0.5; // Every minute
+const STAMINA_DECAY = 1; // Every minute
 
 let soundEnabled = true;
 if (enableSoundCheckbox) {
@@ -214,7 +219,40 @@ window.addEventListener('mousemove', (e) => {
 });
 
 
-let isIgnoringMouse = false;
+// Mood & Stamina Decay logic
+setInterval(() => {
+    mood = Math.max(0, mood - MOOD_DECAY);
+    stamina = Math.max(0, stamina - STAMINA_DECAY);
+    updateAuraState();
+}, 60000); // Check every minute
+
+function updateAuraState() {
+    if (mood < 30) {
+        container.style.filter = 'grayscale(0.5) brightness(0.8)';
+        if (Math.random() > 0.98) chatBubble.innerText = "Biraz yalnız hissediyorum... 🥺";
+    } else if (stamina < 20) {
+        container.classList.add('dizzy');
+        if (Math.random() > 0.98) chatBubble.innerText = "Çok uykum geldi... 💤";
+    } else {
+        container.style.filter = 'none';
+        if (!isProtected) container.classList.remove('dizzy');
+    }
+}
+
+// Click to pet (Increase mood)
+container.addEventListener('click', () => {
+    if (isDragging) return;
+    mood = Math.min(MAX_VAL, mood + 5);
+    stamina = Math.min(MAX_VAL, stamina + 2);
+    performJump();
+});
+
+function performJump() {
+    container.style.transform = `translateY(-20px)`;
+    setTimeout(() => {
+        container.style.transform = `translateY(0px)`;
+    }, 200)
+}
 
 // Click-through logic with state tracking to prevent IPC flooding
 window.addEventListener('mousemove', event => {
@@ -420,8 +458,10 @@ async function processMessage(text) {
     const response = await getAIResponse(text);
 
     if (response.includes('action:protect')) {
+        chatBubble.innerText = "Koruma modu devreye giriyor! 🛡️";
         speak("Koruma modu aktif ediliyor.");
         toggleProtection();
+        setTimeout(() => { chatInterface.classList.add('hidden'); }, 3000);
         return;
     }
 
@@ -429,11 +469,13 @@ async function processMessage(text) {
         speak("Hadi biraz dans edelim!");
         chatBubble.innerText = "Hadi dans edelim!";
         performDance();
+        setTimeout(() => { chatInterface.classList.add('hidden'); }, 3000);
         return;
     }
 
     if (response.includes('action:quit')) {
         speak("Görüşürüz, kendine iyi bak!");
+        container.classList.add('closing'); // Gözlerini kapatsın
         setTimeout(() => {
             try { window.close(); } catch (e) { }
         }, 2000);
@@ -441,13 +483,17 @@ async function processMessage(text) {
     }
 
     if (response.includes('action:play')) {
+        chatBubble.innerText = "Medya kontrol ediliyor... 🎵";
         ipcRenderer.send('system-media-control', 'play-pause');
+        setTimeout(() => { chatInterface.classList.add('hidden'); }, 3000);
         return;
     }
 
     if (response.includes('action:pomodoro')) {
+        chatBubble.innerText = "Odaklanma modu başlıyor! ⏳";
         speak("Odaklanma zamanı başlıyor, 25 dakika sonra görüşürüz.");
         startPomodoro();
+        setTimeout(() => { chatInterface.classList.add('hidden'); }, 3000);
         return;
     }
 
@@ -455,6 +501,7 @@ async function processMessage(text) {
         isSpeechEnabled = true;
         chatBubble.innerText = "Sesli konuşma açıldı! 🎙️";
         speak("Sesli konuşma açıldı.");
+        setTimeout(() => { chatInterface.classList.add('hidden'); }, 3000);
         return;
     }
 
@@ -462,10 +509,41 @@ async function processMessage(text) {
         speak("Sesli konuşma kapatılıyor.");
         isSpeechEnabled = false;
         chatBubble.innerText = "Sesli konuşma kapatıldı. 🔇";
+        setTimeout(() => { chatInterface.classList.add('hidden'); }, 3000);
         return;
     }
 
-    chatBubble.innerText = response;
+    if (response.includes('action:launch:')) {
+        // En sondaki komutu güvenli bir şekilde al
+        const parts = response.split('action:launch:');
+        const cmd = parts[parts.length - 1].trim();
+
+        chatBubble.innerText = "İstediğin komutu çalıştırıyorum... 🚀";
+        speak("Hemen hallediyorum.");
+        ipcRenderer.send('launch-app', cmd);
+
+        // Aksiyondan sonra sohbeti kapat
+        setTimeout(() => {
+            chatInterface.classList.add('hidden');
+        }, 3000);
+        return;
+    }
+
+    if (response.includes('action:mood_status')) {
+        const status = `Ruh halim: %${Math.floor(mood)}, Enerjim: %${Math.floor(stamina)}.`;
+        chatBubble.innerText = status;
+        speak(status);
+        return;
+    }
+
+    // Ekranda gösterilecek yanıtı temizle (action: kısmını gizle)
+    const displayResponse = response.replace(/action:\S+/g, '').trim();
+    if (displayResponse) {
+        chatBubble.innerText = displayResponse;
+    } else {
+        // Eğer yanıt sadece aksiyondan ibaretse bubble'ı gizleme veya varsayılan mesaj yaz
+        // (Zaten aksiyonlar kendi mesajlarını set ediyor yukarıda)
+    }
     speak(response);
 }
 
@@ -504,6 +582,48 @@ userInput.addEventListener('keydown', async (e) => {
 ipcRenderer.on('voice-command', async (event, command) => {
     console.log("Renderer sesli komut işliyor:", command);
     await processMessage(command);
+});
+
+// Handle Multiple App Matches
+ipcRenderer.on('multiple-apps-found', (event, matches) => {
+    chatBubble.innerText = "Birden fazla seçenek buldum, hangisini açayım? 🤔";
+
+    const listContainer = document.createElement('div');
+    listContainer.style.marginTop = '10px';
+    listContainer.style.display = 'flex';
+    listContainer.style.flexDirection = 'column';
+    listContainer.style.gap = '5px';
+
+    matches.slice(0, 5).forEach(fullPath => {
+        const fileName = fullPath.split('\\').pop();
+        const btn = document.createElement('button');
+        btn.innerText = fileName;
+        btn.title = fullPath;
+        btn.style.padding = '5px';
+        btn.style.fontSize = '12px';
+        btn.style.background = 'rgba(0, 255, 255, 0.1)';
+        btn.style.border = '1px solid var(--primary-glow)';
+        btn.style.color = 'white';
+        btn.style.cursor = 'pointer';
+        btn.style.borderRadius = '5px';
+
+        btn.onclick = () => {
+            ipcRenderer.send('launch-app', fullPath);
+            chatBubble.innerText = `${fileName} başlatılıyor!`;
+            listContainer.remove();
+            setTimeout(() => { chatInterface.classList.add('hidden'); }, 2000);
+        };
+        listContainer.appendChild(btn);
+    });
+
+    chatBubble.appendChild(listContainer);
+    chatInterface.classList.remove('hidden');
+    speak("Birden fazla seçenek buldum, listeden seçebilir misin?");
+});
+
+ipcRenderer.on('app-launch-failed', (event, appName) => {
+    chatBubble.innerText = `'${appName}' uygulamasını hiçbir yerde bulamadım. 😔`;
+    speak("Maalesef bu uygulamayı bilgisayarında bulamadım.");
 });
 
 // Prevent chat from closing when clicking inside it
