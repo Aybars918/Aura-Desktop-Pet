@@ -58,8 +58,16 @@ npm start
 
 - **Sürükle & Bırak:** Aura'yı vücudundan yakalayıp istediğiniz yere taşıyabilirsiniz.
 - **Sohbet:** Aura'ya çift tıklayarak sohbet ekranını açabilirsiniz.
+- **Sesli Komut Kurulumu (Opsiyonel):** 🎙️
+  - Ses model dosyası çok büyük olduğu için ana projeye dahil edilmemiştir.
+  - Kullanmak için: 
+    1. [Vosk Models](https://alphacephei.com/vosk/models) adresinden `vosk-model-small-tr-0.3` modelini indirin.
+    2. İndirdiğiniz klasörü zipten çıkarıp proje ana dizinine `vosk-model-small-tr-0.3` adıyla koyun.
+    3. Koruma modunu başlattığınızda Aura sizi dinlemeye başlayacaktır.
 - **Özel Komutlar:**
   - *"Dans et"* -> Aura dans etmeye başlar.
+  - *"Konuşmayı aç"* -> Aura cevaplarını sesli olarak söyler.
+  - *"Konuşmayı kapat"* -> Aura sadece yazılı cevap verir.
   - *"Kapat"* -> Aura uygulamayı kapatır.
 
 ## 🎨 Tasarım Detayları

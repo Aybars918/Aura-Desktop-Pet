@@ -30,6 +30,8 @@ const playPauseBtn = document.getElementById('play-pause-btn');
 const prevBtn = document.getElementById('prev-btn');
 const nextBtn = document.getElementById('next-btn');
 
+let isSpeechEnabled = true;
+
 let soundEnabled = true;
 if (enableSoundCheckbox) {
     enableSoundCheckbox.addEventListener('change', (e) => {
@@ -312,10 +314,13 @@ async function toggleProtection() {
 }
 
 confirmCamBtn.addEventListener('click', async () => {
-    const deviceId = cameraSelect.value;
+    const camDeviceId = cameraSelect.value;
+
     cameraChoice.style.display = 'none';
     userInput.parentElement.style.display = 'block';
-    await startProtection(deviceId);
+
+    // Start Camera Protection
+    await startProtection(camDeviceId);
 });
 
 async function startProtection(deviceId) {
@@ -406,47 +411,99 @@ function triggerAlert(isFromBroadcast = false) {
     }, 1000);
 }
 
+async function processMessage(text) {
+    if (!text.trim()) return;
+
+    chatBubble.innerText = "Düşünüyor...";
+    chatInterface.classList.remove('hidden');
+
+    const response = await getAIResponse(text);
+
+    if (response.includes('action:protect')) {
+        speak("Koruma modu aktif ediliyor.");
+        toggleProtection();
+        return;
+    }
+
+    if (response.includes('action:dance')) {
+        speak("Hadi biraz dans edelim!");
+        chatBubble.innerText = "Hadi dans edelim!";
+        performDance();
+        return;
+    }
+
+    if (response.includes('action:quit')) {
+        speak("Görüşürüz, kendine iyi bak!");
+        setTimeout(() => {
+            try { window.close(); } catch (e) { }
+        }, 2000);
+        return;
+    }
+
+    if (response.includes('action:play')) {
+        ipcRenderer.send('system-media-control', 'play-pause');
+        return;
+    }
+
+    if (response.includes('action:pomodoro')) {
+        speak("Odaklanma zamanı başlıyor, 25 dakika sonra görüşürüz.");
+        startPomodoro();
+        return;
+    }
+
+    if (response.includes('action:speech_on')) {
+        isSpeechEnabled = true;
+        chatBubble.innerText = "Sesli konuşma açıldı! 🎙️";
+        speak("Sesli konuşma açıldı.");
+        return;
+    }
+
+    if (response.includes('action:speech_off')) {
+        speak("Sesli konuşma kapatılıyor.");
+        isSpeechEnabled = false;
+        chatBubble.innerText = "Sesli konuşma kapatıldı. 🔇";
+        return;
+    }
+
+    chatBubble.innerText = response;
+    speak(response);
+}
+
+function speak(text) {
+    if (!isSpeechEnabled) return;
+    // Önceki konuşmayı durdur
+    window.speechSynthesis.cancel();
+
+    // Sesi temizle (action: komutlarını okumasın)
+    const cleanText = text.replace(/action:\w+/g, '').trim();
+    if (!cleanText) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = 'tr-TR';
+    utterance.rate = 1.1;
+    utterance.pitch = 1.2; // Biraz daha sevimli/robotik bir ses için
+
+    // Türkçe ses bulmaya çalış
+    const voices = window.speechSynthesis.getVoices();
+    const trVoice = voices.find(v => v.lang.includes('tr'));
+    if (trVoice) utterance.voice = trVoice;
+
+    window.speechSynthesis.speak(utterance);
+}
+
 // Handle Chat Input
 userInput.addEventListener('keydown', async (e) => {
     if (e.key === 'Enter') {
         const text = userInput.value;
-        if (!text.trim()) return;
-
-        chatBubble.innerText = "Düşünüyor...";
         userInput.value = '';
-
-        const response = await getAIResponse(text);
-
-        if (response.includes('action:protect')) {
-            toggleProtection();
-            return;
-        }
-
-        if (response.includes('action:dance')) {
-            chatBubble.innerText = "Hadi dans edelim!";
-            performDance();
-            return;
-        }
-
-        if (response.includes('action:quit')) {
-            try {
-                window.close();
-            } catch (e) { }
-            return;
-        }
-
-        if (response.includes('action:play')) {
-            ipcRenderer.send('system-media-control', 'play-pause');
-            return;
-        }
-
-        if (response.includes('action:pomodoro')) {
-            startPomodoro();
-            return;
-        }
-
-        chatBubble.innerText = response;
+        await processMessage(text);
     }
+});
+
+// Handle Voice Commands from Main Process
+ipcRenderer.on('voice-command', async (event, command) => {
+    console.log("Renderer sesli komut işliyor:", command);
+    await processMessage(command);
 });
 
 // Prevent chat from closing when clicking inside it
