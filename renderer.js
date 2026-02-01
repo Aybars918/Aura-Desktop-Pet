@@ -23,6 +23,10 @@ const confirmCamBtn = document.getElementById('confirm-cam');
 const sirenSound = document.getElementById('siren-sound');
 const enableSoundCheckbox = document.getElementById('enable-sound');
 const customSoundInput = document.getElementById('custom-sound');
+const mediaControls = document.getElementById('media-controls');
+const playPauseBtn = document.getElementById('play-pause-btn');
+const prevBtn = document.getElementById('prev-btn');
+const nextBtn = document.getElementById('next-btn');
 
 let soundEnabled = true;
 if (enableSoundCheckbox) {
@@ -30,6 +34,52 @@ if (enableSoundCheckbox) {
         soundEnabled = e.target.checked;
     });
 }
+
+// Media Control Logic (System-Wide)
+let playState = false;
+
+if (playPauseBtn) {
+    playPauseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        playState = !playState;
+        playPauseBtn.innerText = playState ? '⏸' : '▶';
+
+        // Show/Hide controls based on play state
+        if (playState) {
+            mediaControls.classList.add('visible');
+        } else {
+            // Keep visible for a moment even when paused
+            setTimeout(() => {
+                if (!playState) mediaControls.classList.remove('visible');
+            }, 5000);
+        }
+
+        ipcRenderer.send('system-media-control', 'play-pause');
+    });
+}
+
+if (prevBtn) {
+    prevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ipcRenderer.send('system-media-control', 'prev');
+    });
+}
+
+if (nextBtn) {
+    nextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        ipcRenderer.send('system-media-control', 'next');
+    });
+}
+
+// Show controls on hover always
+container.addEventListener('mouseenter', () => {
+    if (!isClone) mediaControls.classList.add('visible');
+});
+
+container.addEventListener('mouseleave', () => {
+    if (!isClone && !playState) mediaControls.classList.remove('visible');
+});
 
 // Handle Custom Sound Selection
 if (customSoundInput) {
@@ -334,6 +384,11 @@ userInput.addEventListener('keydown', async (e) => {
             try {
                 window.close();
             } catch (e) { }
+            return;
+        }
+
+        if (response.includes('action:play')) {
+            ipcRenderer.send('system-media-control', 'play-pause');
             return;
         }
 

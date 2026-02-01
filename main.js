@@ -114,7 +114,7 @@ ipcMain.handle('ask-ai', async (event, text) => {
             messages: [
                 {
                     role: "system",
-                    content: "Sen Aura adında, masaüstünde yaşayan sevimli, eğlenceli ve biraz felsefi bir robot arkadaşsın. Çok kısa, öz ve esprili cevaplar ver (maksimum 1-2 cümle). Türkçe konuş. Kullanıcı 'dans et' derse kesinlikle sadece 'action:dance' yaz. Koruma derse sadece 'action:protect' yaz. Kapat derse 'action:quit' yaz."
+                    content: "Sen Aura adında, masaüstünde yaşayan sevimli, eğlenceli ve biraz felsefi bir robot arkadaşsın. Çok kısa, öz ve esprili cevaplar ver (maksimum 1-2 cümle). Türkçe konuş. Kullanıcı 'dans et' derse kesinlikle sadece 'action:dance' yaz. Koruma derse sadece 'action:protect' yaz. Müzik çal veya ses oynat derse sadece 'action:play' yaz. Kapat derse 'action:quit' yaz."
                 },
                 {
                     role: "user",
@@ -171,6 +171,37 @@ ipcMain.on('spawn-clones', () => {
 ipcMain.on('remove-clones', () => {
     clones.forEach(c => { if (!c.isDestroyed()) c.destroy(); });
     clones = [];
+});
+
+const { exec } = require('child_process');
+
+ipcMain.on('system-media-control', (event, action) => {
+    let keyCode;
+    switch (action) {
+        case 'play-pause': keyCode = 179; break; // VK_MEDIA_PLAY_PAUSE
+        case 'next': keyCode = 176; break;       // VK_MEDIA_NEXT_TRACK
+        case 'prev': keyCode = 177; break;       // VK_MEDIA_PREV_TRACK
+        default: return;
+    }
+
+    // Improved PowerShell script to emulate media key press
+    const psCommand = `(Add-Type -TypeDefinition "[DllImport('user32.dll')] public class Keyboard { [DllImport('user32.dll')] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo); }" -PassThru)::keybd_event(${keyCode}, 0, 0, 0); (Add-Type -TypeDefinition "[DllImport('user32.dll')] public class Keyboard { [DllImport('user32.dll')] public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, uint dwExtraInfo); }" -PassThru)::keybd_event(${keyCode}, 0, 2, 0);`;
+
+    // Alternative simpler approach if first fails
+    const simpleCommand = `$wshell = New-Object -ComObject WScript.Shell; $wshell.SendKeys([char]${keyCode})`;
+
+    exec(`powershell -Command "${psCommand}"`, (error) => {
+        if (error) {
+            console.error(`Media Control Error (${action}), trying fallback:`, error);
+            // Fallback for Play/Pause specifically which SendKeys handles differently
+            let fallback;
+            if (action === 'play-pause') fallback = '$wshell = New-Object -ComObject WScript.Shell; $wshell.SendKeys([char]179)';
+            else if (action === 'next') fallback = '$wshell = New-Object -ComObject WScript.Shell; $wshell.SendKeys([char]176)';
+            else if (action === 'prev') fallback = '$wshell = New-Object -ComObject WScript.Shell; $wshell.SendKeys([char]177)';
+
+            if (fallback) exec(`powershell -Command "${fallback}"`);
+        }
+    });
 });
 
 ipcMain.on('broadcast-alert', () => {

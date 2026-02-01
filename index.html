@@ -12,6 +12,11 @@
     <div class="aura-container">
         <div class="aura-body">
             <div class="face">
+                <div class="media-controls" id="media-controls">
+                    <button id="prev-btn" class="media-btn">⏮</button>
+                    <button id="play-pause-btn" class="media-btn play-btn">▶</button>
+                    <button id="next-btn" class="media-btn">⏭</button>
+                </div>
                 <div class="eye left"></div>
                 <div class="eye right"></div>
                 <div class="mouth"></div>
@@ -45,7 +50,8 @@
                     style="width: 100%; margin-top: 5px; border-radius: 10px; background: var(--primary-glow); color: black; border: none; cursor: pointer; padding: 5px; font-weight: bold;">Kamerayı
                     Seç ve Başlat</button>
             </div>
-            <audio id="siren-sound" src="https://www.soundjay.com/mechanical_c2026/sounds/sharpening-knife-1.mp3" preload="auto"></audio>
+            <audio id="siren-sound" src="https://www.soundjay.com/mechanical_c2026/sounds/sharpening-knife-1.mp3"
+                preload="auto"></audio>
             <div class="input-area">
                 <input type="text" id="user-input" placeholder="Bir şey söyle...">
             </div>

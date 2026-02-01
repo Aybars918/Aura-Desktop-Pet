@@ -104,6 +104,63 @@ body {
     transition: all 0.2s;
 }
 
+/* Media Controls */
+.media-controls {
+    position: absolute;
+    top: -30px;
+    /* Positioned above the eyes */
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 30;
+    width: 140px;
+}
+
+.media-controls.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+}
+
+.media-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    font-size: 14px;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+    -webkit-app-region: no-drag;
+}
+
+.media-btn:hover {
+    background: rgba(0, 255, 255, 0.25);
+    border-color: #0ff;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+    transform: scale(1.1);
+    color: #0ff;
+}
+
+.media-btn.play-btn {
+    width: 42px;
+    height: 42px;
+    font-size: 18px;
+    background: rgba(0, 255, 255, 0.15);
+}
+
 /* Inner Core Glow */
 .core-glow {
     position: absolute;

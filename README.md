@@ -12,6 +12,9 @@ Aura, masaüstünüzde yaşayan, sizinle etkileşime giren, akıllı ve sevimli 
 - **Koruma Modu (Yeni!):** Aura'ya "koruma" dediğinizde kamera üzerinden hareket algılama yapar. yabancıları bilgisayardan uzak tutmak için alarm verir. 🚨👀
   - **Özelleştirilebilir Alarm Sesi:** Kendi `.mp3` veya `.wav` dosyanızı yükleyerek alarm sesini kişiselleştirebilirsiniz!
   - **Klon Ordusu:** Koruma anında ekranda beliren ek klonlarla tam güvenlik sağlar.
+- **Sistem Medya Kontrolü (Yeni!):** Bilgisayarınızda çalan herhangi bir videoyu veya müziği (YouTube, Spotify vb.) Aura üzerinden yönetin! 🎵
+  - **Dinamik Panel:** Aura'nın üzerine gelindiğinde veya bir medya oynatıldığında gözlerinin üzerinde kontrol tuşları (⏮ ▶/⏸ ⏭) belirir.
+  - **Akıllı Sabitleme:** Medya oynatılırken kontrol paneli Aura'nın üzerinde sabit kalarak hızlı erişim sağlar.
 - **Şık Tasarım:** Glassmorphism (cam tasarımı) efekti, neon parlamalar ve akıcı orbit halkaları.
 - **Her Zaman Üstte:** Aura her zaman pencerelerinizin üzerinde durur, böylece her an ona ulaşabilirsiniz.
 
